@@ -1,0 +1,26 @@
+[
+  {
+    "no_izin":"IZN001\/2024",
+    "nama_perusahaan":"PT. Contoh Industri",
+    "jenis_izin":"Izin Usaha Industri",
+    "tanggal_terbit":"2024-01-15",
+    "status":"Aktif",
+    "lokasi":"Jakarta Selatan"
+  },
+  {
+    "no_izin":"IZN002\/2024",
+    "nama_perusahaan":"CV. Sampel Manufacturing",
+    "jenis_izin":"Izin Lingkungan",
+    "tanggal_terbit":"2024-02-20",
+    "status":"Aktif",
+    "lokasi":"Bekasi"
+  },
+  {
+    "no_izin":"IZN003\/2024",
+    "nama_perusahaan":"PT. Demo Ekspor",
+    "jenis_izin":"Izin Usaha Perdagangan",
+    "tanggal_terbit":"2024-03-10",
+    "status":"Dalam Review",
+    "lokasi":"Tangerang"
+  }
+]
