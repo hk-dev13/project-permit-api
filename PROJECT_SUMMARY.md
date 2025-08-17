@@ -12,7 +12,12 @@ Berhasil membuat **MVP API Proxy** untuk mengakses data perizinan PTSP MENLHK ya
 - **`advanced_scraper.py`**: Script advanced dengan form handling dan session management
 
 ### 2. 🔌 KLHK API Client
-- **`klhk_client_fixed.py`**: Client untuk mengakses API PTSP MENLHK
+- Client: Untuk saat ini menggunakan shim `api/clients/global_client.py` yang mengarah ke `experiments/klhk_client_fixed.py`. Ganti dengan implementasi client baru bila tersedia.
+
+Struktur baru (ringkas):
+- `api/routes/` berisi blueprint (`health.py`, `permits.py`)
+- `api/utils/` berisi utilitas (`cache.py`, `schema.py`)
+- `api/clients/global_client.py` adalah adapter sementara
 - Fallback ke sample data ketika API tidak accessible
 - Data formatting dan standardization
 - Search dan filtering capabilities

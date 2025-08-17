@@ -1,6 +1,9 @@
 """
 Global client import shim.
 Tries to import KLHKClient from known locations and re-exports it for app usage.
+
+Note: This is a temporary adapter to legacy KLHK client.
+Replace with actual EPA client implementation when available.
 """
 
 try:

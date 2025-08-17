@@ -18,27 +18,35 @@ Project ini awalnya dimulai dari **web scraping** lalu dikembangkan menjadi **MV
 
 ## Project Structure
 project-permit-api/
-├── api/ # Core API server (Flask)
-│ ├── api_server.py
-│ ├── klhk_client.py
-│ └── test_api.py
+├── api/                         # Core API server (Flask)
+│   ├── api_server.py            # App entrypoint
+│   ├── routes/                  # Blueprints
+│   │   ├── health.py
+│   │   └── permits.py
+│   ├── clients/                 # API clients (shim to legacy for now)
+│   │   └── global_client.py
+│   └── utils/                   # Shared utilities
+│       ├── cache.py             # TTL in-memory cache
+│       └── schema.py            # Permit schema & normalizer
 │
-├── legacy_scraper/ # Old web scraping scripts (for reference)
-│ ├── web_scraper.py
-│ ├── perizinan_scraper.py
-│ └── advanced_scraper.py
+├── experiments/                 # Legacy client and prototypes
+│   ├── klhk_client_fixed.py
+│   └── demo_cookies.json
 │
-├── experiments/ # Quick test & prototype scripts
-│ ├── quick_test.py
-│ ├── klhk_client_fixed.py
-│ └── demo_cookies.json
+├── legacy_scraper/              # Old web scraping scripts (kept for reference)
+│   ├── web_scraper.py
+│   ├── perizinan_scraper.py
+│   └── advanced_scraper.py
 │
-├── output/ # Generated data (ignored in git)
+├── tests/                       # Test scripts
+│   ├── test_api.py
+│   └── quick_test.py
 │
-├── API_DOCUMENTATION.md # Detail API endpoints
-├── PROJECT_SUMMARY.md # Project overview & roadmap
-├── requirements.txt # Dependencies
-├── README.md # This file
+├── output/
+├── API_DOCUMENTATION.md
+├── PROJECT_SUMMARY.md
+├── requirements.txt
+├── README.md
 └── LICENSE
 
 yaml
@@ -53,22 +61,17 @@ Edit
 ```bash
 git clone https://github.com/hk-dev13/project-permit-api.git
 cd project-permit-api
-2. Setup environment
-bash
-Copy
-Edit
-python -m venv venv
-source venv/bin/activate   # Linux/Mac
-venv\Scripts\activate      # Windows
 
+# Setup environment (Windows)
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
-3. Jalankan API
-bash
-Copy
-Edit
-python api/api_server.py
-Server akan berjalan di:
- http://127.0.0.1:5000
+
+# Run API
+python api\api_server.py
+
+# Server
+# http://127.0.0.1:5000
 
  Available Endpoints
 Method	Endpoint	Description
@@ -85,17 +88,14 @@ Detail lengkap ada di API Documentation.
 
 Testing
 Quick test:
+```bash
+python tests\quick_test.py
+```
 
-bash
-Copy
-Edit
-python experiments/quick_test.py
 Comprehensive test:
-
-bash
-Copy
-Edit
-pytest api/test_api.py
+```bash
+python tests\test_api.py
+```
 
 Documentation
 [API Documentation](API_DOCUMENTATION.md) → Endpoint, request/response, examples.
