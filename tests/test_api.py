@@ -28,9 +28,9 @@ class APITester:
             print(f"{'='*50}")
 
             if method == 'GET':
-                response = self.session.get(url, params=params)
+                response = self.session.get(url, params=params, timeout=30)
             elif method == 'POST':
-                response = self.session.post(url, json=data, params=params)
+                response = self.session.post(url, json=data, params=params, timeout=30)
 
             print(f"Status Code: {response.status_code}")
             print(f"Response Time: {response.elapsed.total_seconds():.2f}s")
@@ -117,7 +117,7 @@ class APITester:
                 'name': 'Get Permits with Pagination',
                 'endpoint': '/permits',
                 'method': 'GET',
-                'params': {'page': 1, 'limit': 2}
+                'params': {'page': 1, 'limit': 5}
             },
 
             # Search endpoints

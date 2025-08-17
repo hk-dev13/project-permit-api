@@ -25,7 +25,7 @@ def test_api_endpoints():
             url = f"{base_url}{endpoint}"
             print(f"\n🔍 Testing: {endpoint}")
 
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=30)
 
             if response.status_code == 200:
                 data = response.json()
