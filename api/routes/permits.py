@@ -3,9 +3,8 @@ from datetime import datetime
 import urllib.parse
 import logging
 
-from clients.global_client import KLHKClient
-from utils import cache as cache_util
-from utils.schema import ensure_permit_schema
+from api.clients.global_client import KLHKClient
+from api.utils import cache as cache_util
 
 permits_bp = Blueprint("permits_bp", __name__)
 
@@ -13,17 +12,17 @@ logger = logging.getLogger(__name__)
 
 def _fetch_and_normalize():
 	"""Fetcher used by cache layer to get fresh data and normalize to schema."""
-	logger.info("Fetching fresh permit data from KLHK API")
+	logger.info("Fetching fresh EPA emissions data")
 	client = KLHKClient()
 	try:
-		sk_data = client.get_status_sk(plain=False)
-		data = sk_data if (sk_data and isinstance(sk_data, list)) else client.create_sample_data()
+		raw = client.get_status_sk(plain=False)
+		data = raw if (raw and isinstance(raw, list)) else client.create_sample_data()
 	except Exception as e:
-		logger.error(f"Error fetching KLHK data: {e}")
+		logger.error(f"Error fetching EPA data: {e}")
 		data = client.create_sample_data()
 
-	# Normalize every record to Permit schema
-	normalized = [ensure_permit_schema(rec) for rec in data if isinstance(rec, dict)]
+	# Normalize via client helper (uses ensure_epa_emission_schema)
+	normalized = client.format_permit_data(data)
 	return normalized
 
 

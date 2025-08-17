@@ -50,7 +50,10 @@ def home():
             '/permits/company/<company_name>': 'Get permits for specific company',
             '/permits/type/<permit_type>': 'Get permits by type',
             '/global/emissions': 'EPA emissions (filters: state, year, pollutant, page, limit)',
-            '/global/emissions/stats': 'EPA emissions statistics'
+            '/global/emissions/stats': 'EPA emissions statistics',
+            '/global/iso': 'ISO 14001 certifications (filters: country, limit)',
+            '/global/eea': 'EEA indicators (filters: country, indicator, year, limit)',
+            '/global/cevs/<company_name>': 'Compute CEVS score for a company (filters: country)'
         },
         'usage_examples': {
             'get_all_permits': '/permits',
@@ -58,7 +61,10 @@ def home():
             'get_active_permits': '/permits/active',
             'company_specific': '/permits/company/PT%20Semen%20Indonesia',
             'by_permit_type': '/permits/type/Izin%20Lingkungan',
-            'epa_emissions': '/global/emissions?state=TX&year=2023&pollutant=CO2'
+            'epa_emissions': '/global/emissions?state=TX&year=2023&pollutant=CO2',
+            'iso_cert': '/global/iso?country=DE&limit=5',
+            'eea_indicator': '/global/eea?country=SE&indicator=GHG&year=2023&limit=5',
+            'cevs_company': '/global/cevs/Green%20Energy%20Co?country=US'
         }
     }
     return jsonify(api_info)
@@ -81,6 +87,9 @@ def not_found(error):
             '/permits/stats'
             , '/global/emissions'
             , '/global/emissions/stats'
+            , '/global/iso'
+            , '/global/eea'
+            , '/global/cevs/<company_name>'
         ]
     }), 404
 

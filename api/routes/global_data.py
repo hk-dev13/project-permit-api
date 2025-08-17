@@ -7,6 +7,9 @@ from typing import Any, Dict, List, Optional
 
 from api.clients.global_client import KLHKClient
 from api.utils import cache as cache_util
+from api.clients.iso_client import ISOClient
+from api.clients.eea_client import EEAClient
+from api.services.cevs_aggregator import compute_cevs_for_company
 
 
 global_bp = Blueprint("global_bp", __name__)
@@ -87,10 +90,17 @@ def global_emissions():
 		if limit < 1 or limit > 100:
 			limit = 50
 
-		data = _get_cached_data()
-
-		# Apply filters in-memory (we cache the full normalized list)
-		filtered = [d for d in data if _matches_filters(d, state=state, year=year, pollutant=pollutant)]
+		if state or year is not None or pollutant:
+			# Fetch filtered data directly from EPA to avoid missing matches due to cached base set
+			client = KLHKClient()
+			# Ensure we have enough rows for the requested page
+			end_idx = max(0, (page - 1) * limit + limit)
+			raw = client.get_emissions_power_plants(state=state, limit=end_idx)
+			data = client.format_permit_data(raw)
+			filtered = [d for d in data if _matches_filters(d, state=state, year=year, pollutant=pollutant)]
+		else:
+			data = _get_cached_data()
+			filtered = [d for d in data if _matches_filters(d, state=state, year=year, pollutant=pollutant)]
 
 		start_idx = (page - 1) * limit
 		end_idx = start_idx + limit
@@ -149,6 +159,65 @@ def global_emissions_stats():
 
 	except Exception as e:
 		logger.error(f"Error in /global/emissions/stats: {e}")
+		return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@global_bp.route("/global/iso", methods=["GET"])
+def global_iso():
+	try:
+		country = request.args.get("country")
+		limit = int(request.args.get("limit", 50))
+		client = ISOClient()
+		data = client.get_iso14001_certifications(country=country, limit=limit)
+		return jsonify({
+			"status": "success",
+			"data": data,
+			"filters": {"country": country},
+			"retrieved_at": datetime.now().isoformat(),
+		})
+	except Exception as e:
+		logger.error(f"Error in /global/iso: {e}")
+		return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@global_bp.route("/global/eea", methods=["GET"])
+def global_eea():
+	try:
+		country = request.args.get("country")
+		indicator = request.args.get("indicator", "GHG")
+		year = request.args.get("year")
+		year_val = int(year) if year and year.isdigit() else None
+		limit = int(request.args.get("limit", 50))
+		client = EEAClient()
+		data = client.get_indicator(indicator=indicator, country=country, year=year_val, limit=limit)
+		return jsonify({
+			"status": "success",
+			"data": data,
+			"filters": {"country": country, "indicator": indicator, "year": year_val},
+			"retrieved_at": datetime.now().isoformat(),
+		})
+	except Exception as e:
+		logger.error(f"Error in /global/eea: {e}")
+		return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@global_bp.route("/global/cevs/<company_name>", methods=["GET"])
+def global_cevs(company_name: str):
+	try:
+		country = request.args.get("country")
+		result = compute_cevs_for_company(company_name, company_country=country)
+		return jsonify({
+			"status": "success",
+			"company": company_name,
+			"country": country,
+			"score": result["score"],
+			"components": result["components"],
+			"sources": result["sources"],
+			"details": result["details"],
+			"retrieved_at": datetime.now().isoformat(),
+		})
+	except Exception as e:
+		logger.error(f"Error in /global/cevs/{company_name}: {e}")
 		return jsonify({"status": "error", "message": str(e)}), 500
 
 

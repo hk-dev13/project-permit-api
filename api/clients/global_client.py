@@ -28,13 +28,12 @@ class EPAClient:
 	"""
 
 	def __init__(self) -> None:
-		# Envirofacts base endpoint (OData-like)
-		# Contoh: https://enviro.epa.gov/enviro/efservice/
-		self.env_base = os.getenv("EPA_ENV_BASE", "https://enviro.epa.gov/enviro/efservice/").rstrip("/") + "/"
-		# Resource/table default (disesuaikan jika berbeda)
-		# Catatan: Nama resource Envirofacts bervariasi per dataset (e.g., egrid, ghgrp, dll)
-		# Anda dapat men-set EPA_ENV_RESOURCE melalui environment variable.
-		self.env_resource = os.getenv("EPA_ENV_RESOURCE", "egrid/PLANT/JSON")
+		# Envirofacts efservice base (documented)
+		# Format: https://data.epa.gov/efservice/<Table>/<Column>/<Operator>/<Value>/rows/0:n/JSON
+		self.env_base = os.getenv("EPA_ENV_BASE", "https://data.epa.gov/efservice/").rstrip("/") + "/"
+		# Default table: use TRI facility for a stable, public dataset
+		# You can override with EPA_ENV_TABLE (e.g., tri_facility, tri_release)
+		self.env_table = os.getenv("EPA_ENV_TABLE", "tri_facility").strip("/")
 		self.session = requests.Session()
 		self.session.headers.update({
 			"Accept": "application/json",
@@ -116,41 +115,41 @@ class EPAClient:
 		state: Optional[str] = None,
 		year: Optional[int] = None,
 		limit: int = 100,
+		timeout: Optional[float] = None,
 	) -> List[Dict[str, Any]]:
 		"""
-		Ambil data emisi pembangkit listrik dari Envirofacts (jika tersedia).
-		Catatan: Struktur resource Envirofacts bervariasi; endpoint default dapat disesuaikan via env var.
+		Ambil data fasilitas (sebagai proxy emisi) dari Envirofacts efservice.
+		Menggunakan format URL terdokumentasi: data.epa.gov/efservice
+		- Default tabel: tri_facility (stabil dan publik)
+		- Filter yang dipakai: state_abbr (jika diberikan)
+		- Pembatasan baris: rows/0:(limit-1)
+		Catatan: Untuk dataset lain, set EPA_ENV_TABLE; sesuaikan kolom filter.
 		Jika permintaan gagal, kembalikan sample data.
 		"""
-		url = f"{self.env_base}{self.env_resource}"
-
-		params: Dict[str, Any] = {}
-		# Beberapa resource Envirofacts menggunakan segment path untuk filter, bukan query params.
-		# Di sini kita tetap kirim params standar; jika server mengabaikan, tidak berdampak.
+		# Bangun path sesuai format efservice
+		segments: List[str] = [self.env_table]
 		if state:
-			params["state"] = state
-		if year:
-			params["year"] = year
+			segments.extend(["state_abbr", state])
+		# TRI facility tidak menyediakan kolom 'year' langsung; abaikan jika diberikan
+		# Pembatasan baris (0-indexed, inclusive)
+		end_row = max(0, (limit or 100) - 1)
+		segments.extend(["rows", f"0:{end_row}", "JSON"])
+
+		url = f"{self.env_base}{'/'.join(segments)}"
 
 		try:
-			resp = self.session.get(url, params=params, timeout=30)
+			req_timeout = timeout if (timeout is not None and timeout > 0) else 30
+			resp = self.session.get(url, timeout=req_timeout)
 			if resp.status_code == 200:
 				data = resp.json()
-				# Pastikan list
-				if isinstance(data, dict):
-					# beberapa layanan bisa mengembalikan objek dengan key data
-					data = data.get("data", [])  # type: ignore[assignment]
 				if not isinstance(data, list):
-					raise ValueError("Unexpected EPA response shape")
-				# Optional trimming
-				if limit and len(data) > limit:
-					data = data[:limit]
+					raise ValueError("Unexpected EPA response shape (expected list)")
 				return data
 			else:
-				logger.warning(f"EPA Envirofacts HTTP {resp.status_code}, using sample data")
+				logger.warning(f"EPA Envirofacts HTTP {resp.status_code} for {url}, using sample data")
 				return self.create_sample_data()
 		except Exception as e:
-			logger.error(f"Error fetching EPA data: {e}")
+			logger.error(f"Error fetching EPA data from {url}: {e}")
 			return self.create_sample_data()
 
 
