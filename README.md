@@ -29,14 +29,14 @@ project-permit-api/
 │       ├── cache.py             # TTL in-memory cache
 │       └── schema.py            # Permit schema & normalizer
 │
-├── experiments/                 # Legacy client and prototypes
-│   ├── klhk_client_fixed.py
-│   └── demo_cookies.json
-│
-├── legacy_scraper/              # Old web scraping scripts (kept for reference)
-│   ├── web_scraper.py
-│   ├── perizinan_scraper.py
-│   └── advanced_scraper.py
+├── archive/
+│   ├── experiments/             # Legacy client and prototypes
+│   │   ├── klhk_client_fixed.py
+│   │   └── demo_cookies.json
+│   └── legacy_scraper/          # Old web scraping scripts (kept for reference)
+│       ├── web_scraper.py
+│       ├── perizinan_scraper.py
+│       └── advanced_scraper.py
 │
 ├── tests/                       # Test scripts
 │   ├── test_api.py
