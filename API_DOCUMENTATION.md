@@ -35,7 +35,7 @@ Server akan berjalan di `http://localhost:5000`
 http://localhost:5000
 ```
 
-## 🔗 Endpoints
+## Endpoints
 
 ### 1. API Information
 **GET** `/`
@@ -45,6 +45,11 @@ Mendapatkan informasi dasar tentang API.
 **Response:**
 ```json
 {
+
+### Global (EPA) Endpoints
+
+- `/global/emissions` — EPA power plant emissions (filters: state, year, pollutant, page, limit)
+- `/global/emissions/stats` — Aggregated stats (by state, pollutant, year)
   "name": "KLHK Permit API Proxy",
   "version": "1.0.0", 
   "description": "API proxy untuk mengakses data perizinan PTSP MENLHK",

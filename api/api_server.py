@@ -12,8 +12,9 @@ import json
 import urllib.parse
 
 # Tambahkan import blueprint health
-from routes.health import health_bp
-from routes.permits import permits_bp
+from api.routes.health import health_bp
+from api.routes.permits import permits_bp
+from api.routes.global_data import global_bp
 
 # Setup Flask app
 app = Flask(__name__)
@@ -22,6 +23,7 @@ CORS(app)  # Enable CORS for all routes
 # Daftarkan blueprint
 app.register_blueprint(health_bp)
 app.register_blueprint(permits_bp)
+app.register_blueprint(global_bp)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -46,14 +48,17 @@ def home():
             '/permits/search': 'Search permits by company name',
             '/permits/active': 'Get active permits only',
             '/permits/company/<company_name>': 'Get permits for specific company',
-            '/permits/type/<permit_type>': 'Get permits by type'
+            '/permits/type/<permit_type>': 'Get permits by type',
+            '/global/emissions': 'EPA emissions (filters: state, year, pollutant, page, limit)',
+            '/global/emissions/stats': 'EPA emissions statistics'
         },
         'usage_examples': {
             'get_all_permits': '/permits',
             'search_company': '/permits/search?nama=PT%20Pertamina',
             'get_active_permits': '/permits/active',
             'company_specific': '/permits/company/PT%20Semen%20Indonesia',
-            'by_permit_type': '/permits/type/Izin%20Lingkungan'
+            'by_permit_type': '/permits/type/Izin%20Lingkungan',
+            'epa_emissions': '/global/emissions?state=TX&year=2023&pollutant=CO2'
         }
     }
     return jsonify(api_info)
@@ -74,6 +79,8 @@ def not_found(error):
             '/permits/company/<company_name>',
             '/permits/type/<permit_type>',
             '/permits/stats'
+            , '/global/emissions'
+            , '/global/emissions/stats'
         ]
     }), 404
 
