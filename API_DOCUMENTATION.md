@@ -46,10 +46,17 @@ Mendapatkan informasi dasar tentang API.
 ```json
 {
 
-### Global (EPA) Endpoints
+### Global (EPA/EEA/ISO/EDGAR) Endpoints
 
 - `/global/emissions` — EPA power plant emissions (filters: state, year, pollutant, page, limit)
 - `/global/emissions/stats` — Aggregated stats (by state, pollutant, year)
+- `/global/iso` — ISO 14001 certifications (filters: country, limit)
+- `/global/eea` — EEA indicators (CSV/JSON-backed)
+- `/global/cevs/<company>` — Composite score using EPA, ISO, EEA, and EDGAR (country optional)
+
+Notes:
+- EDGAR UCDB Excel can be set via `EDGAR_XLSX_PATH`; trends used for PM2.5/NOx at country level.
+- Pollution trend source is selectable via `CEVS_POLLUTION_SOURCE` = `auto` (default), `eea`, or `edgar`.
   "name": "KLHK Permit API Proxy",
   "version": "1.0.0", 
   "description": "API proxy untuk mengakses data perizinan PTSP MENLHK",

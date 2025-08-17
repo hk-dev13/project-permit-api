@@ -4,11 +4,13 @@ from flask import Blueprint, jsonify, request, current_app
 from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional
+import os
 
 from api.clients.global_client import KLHKClient
 from api.utils import cache as cache_util
 from api.clients.iso_client import ISOClient
 from api.clients.eea_client import EEAClient
+from api.clients.edgar_client import EDGARClient
 from api.services.cevs_aggregator import compute_cevs_for_company
 
 
@@ -198,6 +200,46 @@ def global_eea():
 		})
 	except Exception as e:
 		logger.error(f"Error in /global/eea: {e}")
+		return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@global_bp.route("/global/edgar", methods=["GET"])
+def global_edgar():
+	"""Diagnostic endpoint: return EDGAR series and trend for a country.
+
+	Query params:
+	  - country: required country name matching UC_country in EDGAR file
+	  - pollutant: default PM2.5 (also supports NOx, CO2, GWP_100_AR5_GHG if present)
+	  - window: optional int window for trend delta (default 3)
+	"""
+	try:
+		country = request.args.get("country")
+		pollutant = request.args.get("pollutant", "PM2.5")
+		window_str = request.args.get("window")
+		window = int(window_str) if window_str and window_str.isdigit() else 3
+
+		if not country:
+			return jsonify({"status": "error", "message": "country is required"}), 400
+		try:
+			client = EDGARClient()
+			series = client.get_country_series(country, pollutant)
+			trend = client.get_country_emissions_trend(country, pollutant=pollutant, window=window)
+		except FileNotFoundError:
+			# Graceful fallback when EDGAR workbook isn't available in the environment
+			series = []
+			trend = {"pollutant": pollutant, "slope": 0.0, "increase": False, "years": []}
+
+		return jsonify({
+			"status": "success",
+			"country": country,
+			"pollutant": pollutant,
+			"series": series,
+			"trend": trend,
+			"retrieved_at": datetime.now().isoformat(),
+			"source": os.getenv("EDGAR_XLSX_PATH") or "local:EDGAR_emiss_on_UCDB_2024.xlsx",
+		})
+	except Exception as e:
+		logger.error(f"Error in /global/edgar: {e}")
 		return jsonify({"status": "error", "message": str(e)}), 500
 
 

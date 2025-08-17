@@ -53,7 +53,8 @@ def home():
             '/global/emissions/stats': 'EPA emissions statistics',
             '/global/iso': 'ISO 14001 certifications (filters: country, limit)',
             '/global/eea': 'EEA indicators (filters: country, indicator, year, limit)',
-            '/global/cevs/<company_name>': 'Compute CEVS score for a company (filters: country)'
+            '/global/cevs/<company_name>': 'Compute CEVS score for a company (filters: country)',
+            '/global/edgar': 'EDGAR series+trend (params: country, pollutant=PM2.5, window=3)'
         },
         'usage_examples': {
             'get_all_permits': '/permits',
@@ -90,6 +91,7 @@ def not_found(error):
             , '/global/iso'
             , '/global/eea'
             , '/global/cevs/<company_name>'
+            , '/global/edgar'
         ]
     }), 404
 

@@ -123,3 +123,14 @@ Husni Kusuma (hk-dev13)
 Fokus pada Web3, AI, dan Quantum Computing.
 
 Made with ❤️ for data transparency
+
+---
+
+## Data integrations (extended)
+
+- EPA: Envirofacts efservice (configurable via EPA_ENV_BASE/EPA_ENV_TABLE)
+- EEA: CSV/JSON renewables and industrial pollutants (EEA_CSV_URL, EEA_RENEWABLES_SOURCE, EEA_POLLUTION_SOURCE)
+- ISO: CSV/JSON and Excel list (ISO_CSV_URL, ISO_XLSX_PATH)
+- EDGAR: UCDB Excel aggregated per country-year (set EDGAR_XLSX_PATH or place file at `reference/EDGAR_emiss_on_UCDB_2024.xlsx`)
+
+CEVS pollution trend source selection: set `CEVS_POLLUTION_SOURCE` to `auto` (default), `eea`, or `edgar`.
