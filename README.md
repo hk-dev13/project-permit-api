@@ -14,7 +14,6 @@ The **Environmental Data Verification API** provides standardized, modular, and 
 It transforms raw and fragmented data into consistent, actionable insights that can be integrated into business systems, analysis pipelines, and regulatory tools.
 
 
-
 # Project Overview
 
 This project aims to provide a structured, unified, and developer-friendly API for environmental data verification.
@@ -150,19 +149,6 @@ Documentation
 
 [Project Summary] (PROJECT_SUMMARY.md) → Ringkasan MVP, fitur, roadmap, dan next steps.
 
-
-## Contribution
-
-We welcome contributions from developers and environmental data researchers:
-Fork this repo
-Create a new branch (feature/my-feature)
-Commit your changes
-Push the branch and open a Pull Request
-
-## License
-This project is for educational, research, and global environmental data solutions development purposes.
-
-Detail aturan kontribusi bisa ditambahkan di CONTRIBUTING.md (coming soon).
 
 ## Notes
 File output/ dan demo_cookies.json ignored via .gitignore
