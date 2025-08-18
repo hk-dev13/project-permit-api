@@ -1,4 +1,19 @@
-## Environmental Data Verification API
+# 🌍 Environmental Data Verification API
+
+![Badge showing license type Business Source License 1.1 in blue color](https://img.shields.io/badge/License-BSL--1.1-blue.svg) 
+![Badge showing usage status Non-Commercial in orange color](https://img.shields.io/badge/Use-Non--Commercial-orange.svg)
+![Badge showing re-license to Apache 2.0 scheduled for 2028 in green color](https://img.shields.io/badge/Re--License-Apache%202.0%20(2028)-green.svg)
+![Badge showing project status MVP Global in brightblue color](https://img.shields.io/badge/Status-MVP%20Global-brightblue.svg)
+![Badge showing build passing in success green color](https://img.shields.io/badge/Build-Passing-success.svg)
+
+---
+
+### 🚀 Turning fragmented environmental data into structured, verifiable insights for businesses, analysts, and ESG investors.
+
+The **Environmental Data Verification API** provides standardized, modular, and multi-source access to global environmental datasets.  
+It transforms raw and fragmented data into consistent, actionable insights that can be integrated into business systems, analysis pipelines, and regulatory tools.
+
+
 
 # Project Overview
 
