@@ -209,6 +209,9 @@ __marimo__/
 # Folder hasil scraping
 output/
 
+# Data folder (contains dynamic CSV/data files)
+data/
+
 # File konfigurasi / token sementara
 demo_cookies.json
 
