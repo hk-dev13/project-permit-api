@@ -43,9 +43,8 @@ def compute_cevs_for_company(company_name: str, *, company_country: Optional[str
     iso_norm = iso_client.get_iso14001_certifications(country=company_country, limit=100)
     has_iso = any(_normalize_name(r.get("nama_perusahaan")) and company_key in _normalize_name(r.get("nama_perusahaan")) for r in iso_norm)
 
-    # EEA: use indicator sample plus new CSV-based datasets (renewables and industrial pollution)
+    # EEA: use new Parquet-based datasets (renewables and industrial pollution)
     eea_client = EEAClient()
-    eea_norm = eea_client.get_indicator(country=company_country or None, limit=50)
     # New: country renewables row and EU average row for comparison
     renew_row = eea_client.get_country_renewables(company_country) if company_country else None
     renew_all = eea_client.get_countries_renewables()
@@ -71,7 +70,6 @@ def compute_cevs_for_company(company_name: str, *, company_country: Optional[str
         "base": 50.0,
         "iso_bonus": 0.0,
         "epa_penalty": 0.0,
-        "eea_bonus": 0.0,
         "renewables_bonus": 0.0,
         "pollution_penalty": 0.0,
     "policy_bonus": 0.0,
@@ -85,11 +83,6 @@ def compute_cevs_for_company(company_name: str, *, company_country: Optional[str
     epa_penalty = min(30.0, float(len(epa_matches)) * 2.5)
     components["epa_penalty"] = -epa_penalty
     score -= epa_penalty
-
-    # EEA bonus placeholder: presence of any indicator entries yields small boost
-    eea_bonus = 5.0 if eea_norm else 0.0
-    components["eea_bonus"] = eea_bonus
-    score += eea_bonus
 
     # Renewables bonus (dynamic): reward exceeding target and EU average
     renew_bonus = 0.0
@@ -204,9 +197,8 @@ def compute_cevs_for_company(company_name: str, *, company_country: Optional[str
         "sources": {
             "epa_matches": len(epa_matches),
             "iso_count": len(iso_norm),
-            "eea_count": len(eea_norm),
-            "renewables_source": os.getenv("EEA_RENEWABLES_SOURCE") or os.getenv("EEA_CSV_URL") or "local:countries-breakdown-actual-res-progress-13.csv",
-            "pollution_source": os.getenv("EEA_POLLUTION_SOURCE") or "local:industrial-releases-of-pollutants-to.csv",
+            "renewables_source": os.getenv("EEA_RENEWABLES_SOURCE") or "EEA Parquet API",
+            "pollution_source": os.getenv("EEA_POLLUTION_SOURCE") or "EEA Parquet API",
             "edgar_source": os.getenv("EDGAR_XLSX_PATH") or "local:EDGAR_emiss_on_UCDB_2024.xlsx",
             "policy_source": os.getenv("POLICY_XLSX_PATH") or "local:Annex III_Best practices and justifications.xlsx",
             "pollution_trend_source": os.getenv("CEVS_POLLUTION_SOURCE") or "auto",
@@ -214,7 +206,6 @@ def compute_cevs_for_company(company_name: str, *, company_country: Optional[str
         "details": {
             "epa": epa_matches,
             "iso": iso_norm,
-            "eea": eea_norm,
             "renewables": {"country_row": renew_row, "eu_row": eu_row, "bonus_calc": renew_details},
             "pollution_trend": pol_details or pol_trend,
             "policy": policy_details,

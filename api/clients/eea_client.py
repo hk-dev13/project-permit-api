@@ -94,6 +94,21 @@ class EEAClient:
             })
         return normalized_data
 
+    def get_country_renewables(self, country: Optional[str]) -> Optional[Dict[str, Any]]:
+        """
+        Mengambil data energi terbarukan untuk negara tertentu.
+        """
+        if not country:
+            return None
+        
+        all_countries = self.get_countries_renewables()
+        country_lower = country.strip().lower()
+        
+        for record in all_countries:
+            if record.get("country", "").strip().lower() == country_lower:
+                return record
+        return None
+
     def get_industrial_pollution(self) -> List[Dict[str, Any]]:
         """
         Mengambil dan menormalkan data tren polusi industri.
@@ -102,9 +117,46 @@ class EEAClient:
         dataset_id = "industrial-releases-of-pollutants-to-water"
         raw_data = self._get_parquet_data(dataset_id)
         
-        # Logika normalisasi Anda sebelumnya sudah bagus, dapat diterapkan di sini
-        # ...
+        normalized_data = []
+        for record in raw_data:
+            year = record.get("year")
+            if not year:
+                continue
+                
+            def to_float(v):
+                try:
+                    return float(v) if v not in (None, "") else None
+                except Exception:
+                    return None
+                    
+            normalized_data.append({
+                "year": int(year),
+                "cd_hg_ni_pb": to_float(record.get("cd_hg_ni_pb")),
+                "toc": to_float(record.get("toc")),
+                "total_n": to_float(record.get("total_n")),
+                "total_p": to_float(record.get("total_p")),
+                "gva": to_float(record.get("gva")),
+            })
         
-        return raw_data # Kembalikan data yang dinormalisasi
+        # Sort by year
+        normalized_data.sort(key=lambda x: x.get("year", 0))
+        return normalized_data
+
+    def compute_pollution_trend(self, records: List[Dict[str, Any]], window: int = 3) -> Dict[str, Any]:
+        """
+        Menghitung tren sederhana berdasarkan data polusi.
+        """
+        def slope_for(key: str) -> Dict[str, Any]:
+            vals = [r.get(key) for r in records if isinstance(r.get(key), (int, float))]
+            if len(vals) < 2:
+                return {"slope": 0.0, "increase": False}
+            sel = vals[-window:] if len(vals) >= window else vals
+            s = float(sel[-1] - sel[0])
+            return {"slope": s, "increase": s > 0.0}
+            
+        return {
+            "total_n": slope_for("total_n"),
+            "total_p": slope_for("total_p")
+        }
 
 __all__ = ["EEAClient"]
