@@ -5,6 +5,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import io
+import csv
 import requests
 import pandas as pd
 from api.utils.schema import ensure_eea_env_schema
