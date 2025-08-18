@@ -3,28 +3,34 @@ from __future__ import annotations
 import os
 import logging
 from typing import Any, Dict, List, Optional
-import csv
+
 import io
-
 import requests
-
+import pandas as pd
 from api.utils.schema import ensure_eea_env_schema
 
 logger = logging.getLogger(__name__)
 
 
-class EEAClient:
-    """Client for EEA environmental datasets (scaffold).
 
-    If EEA_API_BASE is unset, returns sample data.
+class EEAClient:
+    """Client for EEA environmental datasets (Parquet API).
+
+    Uses the new EEA API (https://eeadmz1-downloads-api-appservice.azurewebsites.net) to fetch Parquet files.
     """
 
+    BASE_URL = "https://eeadmz1-downloads-api-appservice.azurewebsites.net"
+
+    # These dataset IDs should be updated if EEA changes them
+    DATASET_IDS = {
+        "renewables": "share-of-energy-from-renewable-sources",  # Example, update as needed
+        "industrial_pollution": "industrial-releases-of-pollutants-to-water",  # Example, update as needed
+    }
+
     def __init__(self) -> None:
-        self.api_base = os.getenv("EEA_API_BASE", "").rstrip("/")
-        self.csv_url = os.getenv("EEA_CSV_URL", "").strip()
         self.session = requests.Session()
         self.session.headers.update({
-            "Accept": "application/json",
+            "Accept": "application/octet-stream",
             "User-Agent": "project-permit-api/1.0 (+https://github.com/hk-dev13)"
         })
 
@@ -35,42 +41,17 @@ class EEAClient:
             {"country": "PL", "indicator": "GHG", "year": 2023, "value": 210.2, "unit": "MtCO2e"},
         ]
 
-    def _load_from_csv_or_json(self, url: str) -> List[Dict[str, Any]]:
+
+    def _download_parquet(self, dataset_id: str) -> List[Dict[str, Any]]:
+        """Download and parse a Parquet file from the EEA API."""
+        url = f"{self.BASE_URL}/api/Download/{dataset_id}"
         try:
-            resp = self.session.get(url, timeout=30)
-            ct = (resp.headers.get("Content-Type") or "").lower()
-            # Excel support
-            if url.lower().endswith(".xlsx") or "spreadsheetml" in ct:
-                try:
-                    try:
-                        import pandas as pd  # type: ignore
-                    except Exception as ie:
-                        logger.warning(f"pandas not available for XLSX parsing: {ie}")
-                        return []
-                    df = pd.read_excel(io.BytesIO(resp.content))
-                    return df.to_dict(orient="records")  # type: ignore[return-value]
-                except Exception as e:
-                    logger.error(f"EEA XLSX parse error: {e}")
-                    return []
-            text = resp.text
-            if "json" in ct or (text.lstrip().startswith("[") or text.lstrip().startswith("{")):
-                data = resp.json()
-                if isinstance(data, dict):
-                    # Accept common container keys
-                    for key in ("data", "items", "results", "records"):
-                        if key in data and isinstance(data[key], list):
-                            data = data[key]
-                            break
-                    else:
-                        data = []
-                if not isinstance(data, list):
-                    raise ValueError("Unexpected JSON shape for EEA dataset")
-                return [d for d in data if isinstance(d, dict)]
-            buf = io.StringIO(text)
-            reader = csv.DictReader(buf)
-            return [dict(row) for row in reader]
+            resp = self.session.get(url, timeout=60)
+            resp.raise_for_status()
+            df = pd.read_parquet(io.BytesIO(resp.content))
+            return df.to_dict(orient="records")
         except Exception as e:
-            logger.error(f"EEA CSV/JSON load error: {e}")
+            logger.error(f"EEA Parquet download/parse error for {dataset_id}: {e}")
             return []
 
     def get_indicator(self, *, indicator: str = "GHG", country: Optional[str] = None, year: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
@@ -127,48 +108,34 @@ class EEAClient:
         # treat as local path
         return self._read_local_csv(source)
 
-    def get_countries_renewables(self, source: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Load country renewables share dataset and normalize keys.
 
-        Prefers env EEA_RENEWABLES_SOURCE, then EEA_CSV_URL, then local file in repo.
-        """
-        src = (source or os.getenv("EEA_RENEWABLES_SOURCE") or os.getenv("EEA_CSV_URL")
-               or os.path.join(os.getcwd(), "countries-breakdown-actual-res-progress-13.csv"))
-        data = self._load_csv_any(src)
+    def get_countries_renewables(self) -> List[Dict[str, Any]]:
+        """Load country renewables share dataset from EEA Parquet API."""
+        data = self._download_parquet(self.DATASET_IDS["renewables"])
         out: List[Dict[str, Any]] = []
         for r in data:
-            # Headers may contain type suffix after ':'
-            def g(key: str) -> Optional[str]:
-                if key in r:
-                    return r.get(key)
-                # try without type suffix
-                for k in r.keys():
-                    if k.split(":")[0].strip().lower() == key.lower():
-                        return r.get(k)
-                return None
-
-            country = (g("Country") or "").strip()
+            # Adjust these keys as needed to match the Parquet schema
+            country = (r.get("Country") or r.get("country") or "").strip()
             if not country:
                 continue
-            val20 = g("Renewable energy share 2020")
-            val21 = g("Renewable energy share 2021")
-            target20 = g("2020 Target")
+            ren20 = r.get("Renewable energy share 2020") or r.get("renewable_energy_share_2020")
+            ren21 = r.get("Renewable energy share 2021") or r.get("renewable_energy_share_2021")
+            tgt20 = r.get("2020 Target") or r.get("target_2020")
             try:
-                ren20 = float(val20) if (val20 is not None and str(val20).strip() != "") else None
+                ren20 = float(ren20) if ren20 is not None and str(ren20).strip() != "" else None
             except Exception:
                 ren20 = None
             try:
-                ren21 = float(val21) if (val21 is not None and str(val21).strip() != "") else None
+                ren21 = float(ren21) if ren21 is not None and str(ren21).strip() != "" else None
             except Exception:
                 ren21 = None
             try:
-                tgt20 = float(target20) if (target20 is not None and str(target20).strip() != "") else None
+                tgt20 = float(tgt20) if tgt20 is not None and str(tgt20).strip() != "" else None
             except Exception:
                 tgt20 = None
             out.append({
                 "country": country,
                 "renewable_energy_share_2020": ren20,
-                # as requested: use 2021 column as proxy
                 "renewable_energy_share_2021_proxy": ren21,
                 "target_2020": tgt20,
             })
@@ -183,25 +150,14 @@ class EEAClient:
                 return r
         return None
 
-    def get_industrial_pollution(self, source: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Load industrial pollutants time series (index=2010=100 style).
 
-        Prefers env EEA_POLLUTION_SOURCE, then local repo CSV.
-        """
-        src = (source or os.getenv("EEA_POLLUTION_SOURCE")
-               or os.path.join(os.getcwd(), "industrial-releases-of-pollutants-to.csv"))
-        data = self._load_csv_any(src)
-        # Normalize
+    def get_industrial_pollution(self) -> List[Dict[str, Any]]:
+        """Load industrial pollutants time series from EEA Parquet API."""
+        data = self._download_parquet(self.DATASET_IDS["industrial_pollution"])
         norm: List[Dict[str, Any]] = []
         for r in data:
-            def g(key: str) -> Optional[str]:
-                if key in r:
-                    return r.get(key)
-                for k in r.keys():
-                    if k.split(":")[0].strip().lower() == key.lower():
-                        return r.get(k)
-                return None
-            y = g("Year")
+            # Adjust keys as needed to match the Parquet schema
+            y = r.get("Year") or r.get("year")
             try:
                 year = int(float(y)) if y not in (None, "") else None
             except Exception:
@@ -215,13 +171,12 @@ class EEAClient:
                     return None
             norm.append({
                 "year": year,
-                "cd_hg_ni_pb": to_float(g("Cd, Hg, Ni, Pb")),
-                "toc": to_float(g("TOC")),
-                "total_n": to_float(g("Total N")),
-                "total_p": to_float(g("Total P")),
-                "gva": to_float(g("GVA")),
+                "cd_hg_ni_pb": to_float(r.get("Cd, Hg, Ni, Pb") or r.get("cd_hg_ni_pb")),
+                "toc": to_float(r.get("TOC") or r.get("toc")),
+                "total_n": to_float(r.get("Total N") or r.get("total_n")),
+                "total_p": to_float(r.get("Total P") or r.get("total_p")),
+                "gva": to_float(r.get("GVA") or r.get("gva")),
             })
-        # sort by year
         norm.sort(key=lambda x: x.get("year", 0))
         return norm
 
