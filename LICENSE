@@ -1,21 +1,30 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2025 hk-dev13
+Parameters
+Licensor:        Husni Kusuma (hk-dev13)
+Licensed Work:   Project Permit API (the "Software")
+Additional Use Grant: Non-commercial use, research, and evaluation are allowed.
+Change Date:     2028-01-01 (YYYY-MM-DD)
+Change License:  Apache License, Version 2.0
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Terms
+The Licensed Work is provided under the Business Source License 1.1 (the "License"). 
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+You are granted the right to use, copy, modify, and distribute the Licensed Work, 
+but only for non-commercial purposes such as research, testing, and evaluation. 
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Any production use, SaaS offering, or commercial distribution of the Licensed Work 
+requires a separate commercial agreement with the Licensor. 
+
+On the Change Date, the License will automatically convert to the Change License, 
+under which the Licensed Work will be made available to the public as open source.
+
+Disclaimer
+The Licensed Work is provided "as-is" without warranty of any kind. 
+Use of the Licensed Work is at your own risk.
+
+---
+
+For commercial licensing, please contact:
+Email: [husnikusuma00@gmail.com]
+
