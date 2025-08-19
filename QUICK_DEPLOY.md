@@ -53,24 +53,34 @@ After GitHub Action completes:
      PORT: 8000
    ```
 
-### Alternative: Manual ECR Push (if GitHub Actions fails)
+### Alternative: Manual ECR Push (Local Deployment)
 
-If you prefer manual deployment:
+### Prerequisites
+1. **Install Docker Desktop** (if not installed)
+2. **AWS CLI Setup:**
+   ```powershell
+   # AWS CLI already installed via pip in venv
+   .\.venv\Scripts\python.exe -m awscli configure
+   ```
 
+### Manual Deployment Steps
 ```powershell
-# Install AWS CLI first if not installed
-choco install awscli -y
+# Run the automated deployment script
+.\deploy-ecr.ps1
 
-# Configure AWS
-aws configure
+# Or manual steps:
+# 1. Test AWS credentials
+.\.venv\Scripts\python.exe -m awscli sts get-caller-identity
 
-# Get account ID
-$AWS_ACCOUNT_ID = aws sts get-caller-identity --query Account --output text
+# 2. Create ECR repository
+.\.venv\Scripts\python.exe -m awscli ecr create-repository --repository-name permit-api --region ap-southeast-2
 
-# Login to ECR (after Docker is installed)
-aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com"
+# 3. Get ECR login
+$AWS_ACCOUNT_ID = (.\.venv\Scripts\python.exe -m awscli sts get-caller-identity --query Account --output text)
+$LOGIN_PASSWORD = (.\.venv\Scripts\python.exe -m awscli ecr get-login-password --region ap-southeast-2)
+echo $LOGIN_PASSWORD | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com"
 
-# Build and push (after Docker is ready)
+# 4. Build and push
 docker build -f Dockerfile.apprunner -t permit-api .
 docker tag permit-api "$AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/permit-api:latest"
 docker push "$AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/permit-api:latest"
