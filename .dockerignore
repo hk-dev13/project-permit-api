@@ -1,0 +1,79 @@
+# Docker ignore patterns
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation drafts
+*.draft.md
+
+# Logs (but keep logs directory)
+logs/*.log
+logs/*.txt
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archive and backup files
+archive/
+backup/
+*.bak
+
+# Large data files (keep structure but not actual files)
+data/*.csv
+data/*.json
+data/*.xlsx
+output/*.csv
+output/*.json
+output/*.xlsx
+
+# But keep example/reference files
+!reference/
+!data/README.md
