@@ -1,5 +1,20 @@
 # Production Deployment Checklist for AWS App Runner
 
+## 🔐 URGENT: Credentials Security Update
+
+### Current Status (August 20, 2025):
+- ⚠️ **EXPOSED KEYS**: `AKIASE3CDFQSGGXR5YLB` dan `AKIASE3CDFQSGZA4NX6Z` 
+- 🚨 **ACTION REQUIRED**: Delete exposed keys immediately
+- ✅ **GitHub Actions**: Workflow ready, waiting for fresh credentials
+- ✅ **ECR Image**: Available at `147845229604.dkr.ecr.ap-southeast-2.amazonaws.com/permit-api:latest`
+
+### Immediate Action Plan:
+1. **AWS Console** → IAM → Delete exposed access keys
+2. **Create new access key** (3rd generation)
+3. **Update GitHub Secrets**: AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY
+4. **Verify workflow**: Check GitHub Actions success with new credentials
+5. **Deploy App Runner**: Use ECR image URI with fresh credentials
+
 ## 🚀 Pre-Deployment Checklist
 
 ### Code Preparation

@@ -1,0 +1,54 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:DescribeRepositories",
+        "ecr:CreateRepository",
+        "ecr:PutImage",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:DescribeImages",
+        "ecr:ListImages"
+      ],
+      "Resource": "arn:aws:ecr:ap-southeast-2:147845229604:repository/permit-api"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "apprunner:CreateService",
+        "apprunner:UpdateService",
+        "apprunner:DeleteService",
+        "apprunner:DescribeService",
+        "apprunner:ListServices",
+        "apprunner:StartDeployment",
+        "apprunner:ListOperations"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:AttachRolePolicy",
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::147845229604:role/AppRunnerECRAccessRole*",
+        "arn:aws:iam::147845229604:role/service-role/AppRunnerECRAccessRole*"
+      ]
+    }
+  ]
+}
