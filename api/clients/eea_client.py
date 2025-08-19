@@ -8,6 +8,8 @@ import requests
 import pandas as pd
 from functools import lru_cache
 
+from api.utils.mappings import normalize_country_name
+
 # Pastikan Anda telah menambahkan 'pyarrow' ke requirements.txt
 # pip install pyarrow
 
@@ -102,10 +104,10 @@ class EEAClient:
             return None
         
         all_countries = self.get_countries_renewables()
-        country_lower = country.strip().lower()
+        normalized_country = normalize_country_name(country)
         
         for record in all_countries:
-            if record.get("country", "").strip().lower() == country_lower:
+            if normalize_country_name(record.get("country", "")) == normalized_country:
                 return record
         return None
 
@@ -158,5 +160,58 @@ class EEAClient:
             "total_n": slope_for("total_n"),
             "total_p": slope_for("total_p")
         }
+
+    def get_indicator(self, *, indicator: Optional[str] = "GHG", country: Optional[str] = None, 
+                     year: Optional[int] = None, limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        Generic indicator method for backward compatibility.
+        Handles different types of indicators by routing to appropriate methods.
+        """
+        try:
+            if not indicator:
+                indicator = "GHG"
+                
+            indicator_lower = indicator.lower()
+            
+            # Route renewable energy indicators
+            if "renewable" in indicator_lower or indicator_lower in ["res", "share_res"]:
+                if country:
+                    result = self.get_country_renewables(country)
+                    return [result] if result else []
+                else:
+                    results = self.get_countries_renewables()
+                    return results[:limit] if results else []
+            
+            # Route GHG/pollution indicators  
+            elif indicator_lower in ["ghg", "greenhouse", "pollution", "emissions"]:
+                results = self.get_industrial_pollution()
+                
+                # Apply country filter if specified
+                if country:
+                    normalized_country = normalize_country_name(country)
+                    results = [r for r in results 
+                             if normalize_country_name(r.get('country', '')) == normalized_country or
+                                normalize_country_name(r.get('countryName', '')) == normalized_country]
+                
+                # Apply year filter if specified  
+                if year:
+                    results = [r for r in results 
+                             if r.get('year') == year or r.get('reportingYear') == year]
+                
+                return results[:limit] if results else []
+            
+            # Default fallback - return renewable energy data
+            else:
+                logger.warning(f"Unknown indicator '{indicator}', defaulting to renewable energy")
+                if country:
+                    result = self.get_country_renewables(country)
+                    return [result] if result else []
+                else:
+                    results = self.get_countries_renewables()
+                    return results[:limit] if results else []
+                    
+        except Exception as e:
+            logger.error(f"Error in get_indicator: {e}")
+            return []
 
 __all__ = ["EEAClient"]

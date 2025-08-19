@@ -3,8 +3,11 @@ from __future__ import annotations
 import os
 import logging
 from typing import Any, Dict, List, Optional, Tuple
+from functools import lru_cache
 
 from openpyxl import load_workbook  # type: ignore
+
+from api.utils.mappings import normalize_country_name
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +124,8 @@ class EDGARClient:
                     continue
                 try:
                     country = str(row[self._country_col_idx] or "").strip()
+                    # Normalize country name for consistent lookups
+                    country = normalize_country_name(country) or country
                 except Exception:
                     country = ""
                 if not country:
@@ -166,10 +171,16 @@ class EDGARClient:
         """Return sorted series for a country and pollutant: [{year, value}]."""
         if not country:
             return []
+        
+        # Normalize country name for lookup
+        normalized_country = normalize_country_name(country)
+        if not normalized_country:
+            return []
+            
         self._ensure_aggregated()
         series: List[Dict[str, Any]] = []
         agg = self._agg_by_country or {}
-        data = (agg.get(country) or {}).get(pollutant) or {}
+        data = (agg.get(normalized_country) or {}).get(pollutant) or {}
         for y, v in data.items():
             series.append({"year": int(y), "value": float(v)})
         series.sort(key=lambda r: r["year"])  # ascending

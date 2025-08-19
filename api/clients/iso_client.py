@@ -5,11 +5,13 @@ import logging
 from typing import Any, Dict, List, Optional
 import csv
 import io
+from functools import lru_cache
 
 import requests
-from openpyxl import load_workbook  # type: ignore
+from openpyxl import load_workbook
 
 from api.utils.schema import ensure_iso_cert_schema
+from api.utils.mappings import normalize_country_name
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,7 @@ class ISOClient:
             {"company": "Sustain PT", "country": "ID", "certificate": "ISO 14001", "valid_until": "2027-01-15"},
         ]
 
+    @lru_cache(maxsize=5)
     def _load_from_csv_or_json(self, url: str) -> List[Dict[str, Any]]:
         try:
             resp = self.session.get(url, timeout=30)
@@ -58,6 +61,7 @@ class ISOClient:
             logger.error(f"ISO CSV/JSON load error: {e}")
             return []
 
+    @lru_cache(maxsize=5)
     def _load_from_excel(self, path: str, sheet_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """Load ISO 14001 list from Excel. Scans for a sheet and header row containing 'Company'."""
         rows: List[Dict[str, Any]] = []
@@ -138,6 +142,7 @@ class ISOClient:
             logger.error(f"ISO Excel load error: {e}")
         return rows
 
+    @lru_cache(maxsize=10)
     def get_iso14001_certifications(self, *, country: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         data: List[Dict[str, Any]] = []
         # Prefer explicit CSV URL if provided
@@ -167,7 +172,8 @@ class ISOClient:
             data = self.create_sample_data()
 
         if country:
-            data = [d for d in data if str(d.get("country", "")).upper() == country.upper()]
+            normalized_filter = normalize_country_name(country)
+            data = [d for d in data if normalize_country_name(d.get("country", "")) == normalized_filter]
         if limit and len(data) > limit:
             data = data[:limit]
         return [ensure_iso_cert_schema(rec) for rec in data if isinstance(rec, dict)]
