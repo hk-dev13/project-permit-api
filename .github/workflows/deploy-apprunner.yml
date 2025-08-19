@@ -1,12 +1,22 @@
 name: Deploy to AWS App Runner
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:  # Enable manual trigger
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
   push:
     branches: [ main ]
     paths-ignore:
       - 'README.md'
       - 'docs/**'
+      - '*.md'
 
 env:
   AWS_REGION: ap-southeast-2
