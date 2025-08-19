@@ -27,6 +27,7 @@ jobs:
   deploy:
     name: Build and Deploy to App Runner
     runs-on: ubuntu-latest
+    environment: Production
     
     steps:
     - name: Checkout code
