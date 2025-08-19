@@ -1,0 +1,23 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+      - echo "Installing dependencies..."
+      - pip install --upgrade pip
+      - pip install -r requirements.txt
+      - echo "Build completed successfully"
+run:
+  runtime-version: '3.11'
+  command: python run_server.py
+  network:
+    port-env: PORT
+  env:
+    - name: FLASK_ENV
+      value: "production"
+    - name: FLASK_DEBUG  
+      value: "0"
+    - name: PYTHONPATH
+      value: "/opt/app"
+    - name: PYTHONUNBUFFERED
+      value: "1"

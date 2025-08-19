@@ -1,6 +1,6 @@
 """
-Flask API Server - Proxy untuk API PTSP MENLHK
-MVP API yang bertindak sebagai perantara untuk mengakses data perizinan KLHK
+Flask API Server - Environmental Data Verification API
+Production-ready API with security, caching, and multi-source data integration
 """
 
 from flask import Flask, request, jsonify, g
@@ -12,21 +12,41 @@ import json
 import urllib.parse
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables (will load .env.production in production)
 load_dotenv()
 
 # Import security utilities
 from api.utils.security import setup_rate_limiting, require_api_key, is_public_endpoint
 
-# Tambahkan import blueprint health
+# Import all blueprints
 from api.routes.health import health_bp
 from api.routes.permits import permits_bp
 from api.routes.global_data import global_bp
 from api.routes.admin import admin_bp
 
-# Setup Flask app
+# Setup Flask app with production configuration
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+
+# Production CORS configuration
+cors_origins = os.getenv('CORS_ORIGINS', '*')
+if cors_origins != '*':
+    cors_origins = cors_origins.split(',')
+
+CORS(app, 
+     origins=cors_origins,
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization', 'X-API-Key'])
+
+# Production logging configuration
+log_level = getattr(logging, os.getenv('LOG_LEVEL', 'INFO').upper())
+logging.basicConfig(
+    level=log_level,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(os.getenv('LOG_FILE', 'app.log'), mode='a')
+    ] if os.getenv('LOG_FILE') else [logging.StreamHandler()]
+)
 
 # Setup rate limiting
 limiter = setup_rate_limiting(app)
