@@ -7,19 +7,27 @@ from __future__ import annotations
 import os
 import pytest
 from flask import Flask
-from api.api_server import app as flask_app, load_api_keys
+from api.api_server import app as flask_app
 
 
 class TestGlobalRoutes:
     """Test all /global/* endpoints for basic functionality and response structure."""
 
     @pytest.fixture
-    def client(self):
-        """Flask test client for making API requests."""
-        # Langkah 1: Atur konfigurasi dengan string kunci mentah dari environment
-        flask_app.config['API_KEYS'] = os.getenv('API_KEYS')
-        # Langkah 2 (KRITIS): Panggil kembali fungsi parsing untuk memperbarui daftar kunci yang valid
-        load_api_keys(flask_app)
+    def client(self, monkeypatch):
+        """
+        Flask test client with patched environment variables.
+        This ensures the app sees the correct API keys during tests.
+        """
+        # Ambil kunci dari environment yang disediakan oleh CI/workflow
+        api_keys_str = os.getenv('API_KEYS')
+        if not api_keys_str:
+            pytest.fail("API_KEYS environment variable not set in CI.")
+
+        # Gunakan monkeypatch untuk mengatur environment variable secara paksa untuk tes ini
+        monkeypatch.setenv('API_KEYS', api_keys_str)
+        
+        # Sekarang, aman untuk membuat test client karena environment sudah benar
         return flask_app.test_client()
 
     @pytest.fixture

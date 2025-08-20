@@ -4,17 +4,24 @@ import os
 import json
 from api.services.cevs_aggregator import compute_cevs_for_company
 from flask import Flask
-from api.api_server import app as flask_app, load_api_keys
+from api.api_server import app as flask_app
 
 
 def test_global_edgar_endpoint_smoke(monkeypatch):
-    # Langkah 1: Atur konfigurasi dengan string kunci mentah dari environment
-    flask_app.config['API_KEYS'] = os.getenv('API_KEYS')
-    # Langkah 2 (KRITIS): Panggil kembali fungsi parsing untuk memperbarui daftar kunci yang valid
-    load_api_keys(flask_app)
-    client = flask_app.test_client()
-
+    """
+    Smoke test for the /global/edgar endpoint.
+    Uses monkeypatch to ensure API keys are loaded correctly.
+    """
+    # Ambil kunci dari environment yang disediakan oleh CI/workflow
+    api_keys_str = os.getenv('API_KEYS')
     api_key = os.getenv('TEST_API_KEY')
+    if not api_keys_str or not api_key:
+        pytest.fail("API_KEYS or TEST_API_KEY environment variables not set in CI.")
+
+    # Gunakan monkeypatch untuk mengatur environment variable secara paksa untuk tes ini
+    monkeypatch.setenv('API_KEYS', api_keys_str)
+
+    client = flask_app.test_client()
     headers = {'X-API-KEY': api_key}
 
     resp = client.get("/global/edgar?country=United%20States&pollutant=PM2.5&window=3", headers=headers)
