@@ -27,7 +27,7 @@ class TestGlobalRoutes:
         api_key = os.getenv('TEST_API_KEY')
         if not api_key:
             pytest.fail("TEST_API_KEY environment variable not set. Please set it in GitHub Secrets.")
-        return {'X-API-Key': api_key}
+        return {'X-API-KEY': api_key}
 
     def test_global_emissions_basic_response(self, client, auth_headers):
         """Test /global/emissions returns 200 and proper structure."""

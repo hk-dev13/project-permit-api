@@ -14,7 +14,7 @@ def test_global_edgar_endpoint_smoke(monkeypatch):
     client = flask_app.test_client()
 
     api_key = os.getenv('TEST_API_KEY')
-    headers = {'X-API-Key': api_key}
+    headers = {'X-API-KEY': api_key}
 
     resp = client.get("/global/edgar?country=United%20States&pollutant=PM2.5&window=3", headers=headers)
     
