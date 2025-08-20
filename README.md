@@ -132,13 +132,16 @@ This API requires an API key for all `/global/*` endpoints. Permits endpoints ar
 - Or use the `X-API-Key` header
 - Or as a query parameter: `?api_key=<your_api_key>` (for testing only)
 
+
 **API Key Tiers (example):**
 
-| Tier        | Example Key           | Rate Limit     | Features                       |
-|-------------|----------------------|----------------|---------------------------------|
-| Basic       | `basic_xxxxxxxxxxxx` | 100/hour       | emissions, countries, basic_stats |
-| Premium     | `premium_xxxxxxxxxx` | 1000/hour      | + stats, analytics, bulk_export |
-| Enterprise  | `enterprise_xxxxxxx` | unlimited      | all features                   |
+| Tier        | Example Key                                             | Rate Limit     | Features                       |
+|-------------|--------------------------------------------------------|----------------|---------------------------------|
+| Basic       | `basic_xxxxxxxxxx`       | 100/hour       | emissions, countries, basic_stats |
+| Premium     | `premium_xxxxxxxxxx`     | 1000/hour      | + stats, analytics, bulk_export |
+| Enterprise  | `enterprise_xxxxxxxxxxx` | unlimited      | all features                   |
+
+> **Note:** Production API keys are not published. Please request your key from the admin or support team.
 
 > **Note:** Production API keys are not published. Please request your key from the admin or support team.
 

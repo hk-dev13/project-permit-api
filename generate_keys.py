@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Generate secure API keys for production use
