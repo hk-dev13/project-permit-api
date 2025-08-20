@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import pytest
 from flask import Flask
-from api.api_server import app as flask_app
+from api.api_server import app as flask_app, load_api_keys
 
 
 class TestGlobalRoutes:
@@ -16,9 +16,10 @@ class TestGlobalRoutes:
     @pytest.fixture
     def client(self):
         """Flask test client for making API requests."""
-        # PERBAIKAN FINAL: Memuat daftar kunci valid ke dalam konfigurasi aplikasi
-        # sebelum membuat test client.
+        # Langkah 1: Atur konfigurasi dengan string kunci mentah dari environment
         flask_app.config['API_KEYS'] = os.getenv('API_KEYS')
+        # Langkah 2 (KRITIS): Panggil kembali fungsi parsing untuk memperbarui daftar kunci yang valid
+        load_api_keys(flask_app)
         return flask_app.test_client()
 
     @pytest.fixture

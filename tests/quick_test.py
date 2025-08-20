@@ -4,13 +4,14 @@ import os
 import json
 from api.services.cevs_aggregator import compute_cevs_for_company
 from flask import Flask
-from api.api_server import app as flask_app
+from api.api_server import app as flask_app, load_api_keys
 
 
 def test_global_edgar_endpoint_smoke(monkeypatch):
-    # PERBAIKAN FINAL: Memuat daftar kunci valid ke dalam konfigurasi aplikasi
-    # sebelum membuat test client.
+    # Langkah 1: Atur konfigurasi dengan string kunci mentah dari environment
     flask_app.config['API_KEYS'] = os.getenv('API_KEYS')
+    # Langkah 2 (KRITIS): Panggil kembali fungsi parsing untuk memperbarui daftar kunci yang valid
+    load_api_keys(flask_app)
     client = flask_app.test_client()
 
     api_key = os.getenv('TEST_API_KEY')
