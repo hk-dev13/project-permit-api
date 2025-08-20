@@ -21,12 +21,13 @@ on:
 env:
   AWS_REGION: ap-southeast-2
   ECR_REPOSITORY: permit-api
-  APP_RUNNER_SERVICE_NAME: permit-api-service # Nama service dijadikan variabel
+  APP_RUNNER_SERVICE_NAME: permit-api-service
   IMAGE_TAG: ${{ github.sha }}
+  PYTHON_VERSION: '3.11' # Menentukan versi Python
 
 jobs:
-  deploy:
-    name: Build and Deploy to App Runner
+  build-test-deploy: # Mengubah nama job agar lebih deskriptif
+    name: Build, Test, and Deploy to App Runner
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'Production' }} 
     
@@ -34,6 +35,33 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # --- SARAN 1 & 2: Testing & Caching ---
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      # Menggunakan cache agar instalasi dependency lebih cepat di run berikutnya
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Pastikan Anda memiliki file requirements.txt di repository Anda
+        pip install -r requirements.txt
+        pip install pytest # Install pytest untuk testing
+
+    - name: Run tests with pytest
+      # Menjalankan tes. Jika ada tes yang gagal, workflow akan berhenti di sini.
+      run: pytest
+
+    # --- Langkah Deployment yang Sudah Ada ---
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -70,25 +98,44 @@ jobs:
         if [ -n "$SERVICE_ARN" ] && [ "$SERVICE_ARN" != "None" ]; then
           echo "Updating existing App Runner service: $SERVICE_ARN"
           aws apprunner start-deployment --service-arn $SERVICE_ARN
-
-          # PERBAIKAN: Menggunakan perintah 'wait' yang benar dan menambahkan pengecekan status akhir
-          echo "Waiting for service to become stable..."
-          # Menunggu hingga layanan kembali ke status RUNNING, dengan timeout 10 menit
-          aws apprunner wait service-status-running --service-arn $SERVICE_ARN
-
-          echo "Deployment finished. Checking final operation status..."
-          # Mengambil status operasi deployment terakhir
-          LATEST_OP_STATUS=$(aws apprunner list-operations --service-arn $SERVICE_ARN --max-results 1 --query "OperationSummaryList[0].Status" --output text)
-
-          if [ "$LATEST_OP_STATUS" == "SUCCEEDED" ]; then
-            echo "✅ Deployment Succeeded!"
-          else
-            echo "❌ Deployment resulted in status: $LATEST_OP_STATUS"
-            # Membuat job gagal jika deployment tidak berhasil
-            exit 1
-          fi
+          
+          echo "Waiting for deployment to complete..."
+          while true; do
+            STATUS=$(aws apprunner list-operations --service-arn $SERVICE_ARN --max-results 1 --query "OperationSummaryList[0].Status" --output text)
+            if [ "$STATUS" == "SUCCEEDED" ]; then
+              echo "✅ Deployment Succeeded!"
+              break
+            elif [ "$STATUS" == "FAILED" ]; then
+              echo "❌ Deployment Failed!"
+              exit 1
+            elif [ "$STATUS" == "IN_PROGRESS" ]; then
+              echo "Deployment is in progress... waiting 30 seconds."
+              sleep 30
+            else
+              echo "Current operation status: $STATUS. Waiting..."
+              sleep 30
+            fi
+          done
         else
           echo "Service '${{ env.APP_RUNNER_SERVICE_NAME }}' not found. Please create it manually."
           echo "Use Image URI: ${{ steps.build-image.outputs.image_uri }}"
-          exit 1 # Membuat job gagal jika service tidak ditemukan
+          exit 1
         fi
+
+  # --- SARAN 3: Notifikasi ---
+  notify:
+    name: Send Notification
+    runs-on: ubuntu-latest
+    if: always() # Selalu berjalan, baik job sebelumnya sukses maupun gagal
+    needs: [build-test-deploy] # Bergantung pada job sebelumnya
+    steps:
+    - name: Send Slack Notification
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        # Anda perlu menambahkan secret ini di Settings > Secrets and variables > Actions
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_TITLE: "Deployment Status: ${{ needs.build-test-deploy.result }}"
+        SLACK_MESSAGE: "Deployment for `${{ github.repository }}` on branch `${{ github.ref_name }}` has finished."
+        # Warna notifikasi akan hijau jika sukses, merah jika gagal
+        SLACK_COLOR: ${{ needs.build-test-deploy.result == 'success' && 'good' || 'danger' }}
+        SLACK_FOOTER: "GitHub Actions Workflow"
