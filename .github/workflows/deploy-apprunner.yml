@@ -57,9 +57,9 @@ jobs:
         pip install pytest
 
     - name: Run tests with pytest
-      # PERBAIKAN: Menyesuaikan nama environment variable agar cocok dengan kode tes (API_KEYS)
+      # PERBAIKAN: Menggunakan secret TEST_API_KEY yang berisi satu kunci valid
       env:
-        API_KEYS: ${{ secrets.API_KEYS }}
+        TEST_API_KEY: ${{ secrets.TEST_API_KEY }}
       run: pytest
 
     # --- Langkah Deployment ---
