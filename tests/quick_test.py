@@ -12,7 +12,8 @@ def test_global_edgar_endpoint_smoke(monkeypatch):
     client = flask_app.test_client()
 
     # Ambil API key dari environment variable
-    api_key = os.getenv('API_KEY')
+    # PERBAIKAN: Menggunakan nama secret yang benar 'API_KEYS'
+    api_key = os.getenv('API_KEYS')
     # PENTING: Ganti 'X-API-KEY' jika nama header Anda berbeda
     headers = {'X-API-KEY': api_key}
 

@@ -21,9 +21,11 @@ class TestGlobalRoutes:
     @pytest.fixture
     def auth_headers(self):
         """Fixture to create authentication headers from environment variable."""
-        api_key = os.getenv('API_KEY')
+        # PERBAIKAN: Menggunakan nama secret yang benar 'API_KEYS'
+        api_key = os.getenv('API_KEYS')
         if not api_key:
-            pytest.fail("API_KEY environment variable not set. Please set it in GitHub Secrets.")
+            # PERBAIKAN: Pesan error disesuaikan
+            pytest.fail("API_KEYS environment variable not set. Please set it in GitHub Secrets.")
         # PENTING: Ganti 'X-API-KEY' jika nama header Anda berbeda
         return {'X-API-KEY': api_key}
 
