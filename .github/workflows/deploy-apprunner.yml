@@ -56,8 +56,16 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
 
+    # --- LANGKAH DEBUGGING BARU ---
+    - name: Debug API Key
+      run: |
+        KEY_VALUE="${{ secrets.TEST_API_KEY }}"
+        echo "API Key Length: ${#KEY_VALUE}"
+        echo "API Key First 5 Chars: ${KEY_VALUE:0:5}"
+        echo "API Key Last 5 Chars: ${KEY_VALUE: -5}"
+
     - name: Run tests with pytest
-      # PERBAIKAN: Menggunakan secret TEST_API_KEY yang berisi satu kunci valid
+      # Menggunakan secret TEST_API_KEY yang berisi satu kunci valid
       env:
         TEST_API_KEY: ${{ secrets.TEST_API_KEY }}
       run: pytest
