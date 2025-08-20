@@ -29,20 +29,20 @@ jobs:
   build-test-deploy: # Mengubah nama job agar lebih deskriptif
     name: Build, Test, and Deploy to App Runner
     runs-on: ubuntu-latest
+    # Menentukan environment yang akan digunakan, ini memungkinkan akses ke environment secrets
     environment: ${{ github.event.inputs.environment || 'Production' }} 
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # --- SARAN 1 & 2: Testing & Caching ---
+    # --- Testing & Caching ---
     - name: Set up Python ${{ env.PYTHON_VERSION }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Cache pip dependencies
-      # Menggunakan cache agar instalasi dependency lebih cepat di run berikutnya
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
@@ -53,15 +53,17 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        # Pastikan Anda memiliki file requirements.txt di repository Anda
         pip install -r requirements.txt
-        pip install pytest # Install pytest untuk testing
+        pip install pytest
 
     - name: Run tests with pytest
-      # Menjalankan tes. Jika ada tes yang gagal, workflow akan berhenti di sini.
+      # PERBAIKAN: Mengambil API Key dari environment secrets
+      # Pastikan Anda sudah mengatur secret 'API_KEYS' di Settings > Environments
+      env:
+        API_KEY: ${{ secrets.API_KEYS }}
       run: pytest
 
-    # --- Langkah Deployment yang Sudah Ada ---
+    # --- Langkah Deployment ---
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -93,7 +95,7 @@ jobs:
 
     - name: Deploy to App Runner and wait
       run: |
-        SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn | [0]" --output text)
+        SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn | [0]" --output text)
         
         if [ -n "$SERVICE_ARN" ] && [ "$SERVICE_ARN" != "None" ]; then
           echo "Updating existing App Runner service: $SERVICE_ARN"
@@ -122,20 +124,28 @@ jobs:
           exit 1
         fi
 
-  # --- SARAN 3: Notifikasi ---
+  # --- Notifikasi Telegram ---
   notify:
-    name: Send Notification
+    name: Send Telegram Notification
     runs-on: ubuntu-latest
     if: always() # Selalu berjalan, baik job sebelumnya sukses maupun gagal
     needs: [build-test-deploy] # Bergantung pada job sebelumnya
+    # Menggunakan environment yang sama untuk mengakses secrets Telegram
+    environment: ${{ github.event.inputs.environment || 'Production' }}
     steps:
-    - name: Send Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        # Anda perlu menambahkan secret ini di Settings > Secrets and variables > Actions
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-        SLACK_TITLE: "Deployment Status: ${{ needs.build-test-deploy.result }}"
-        SLACK_MESSAGE: "Deployment for `${{ github.repository }}` on branch `${{ github.ref_name }}` has finished."
-        # Warna notifikasi akan hijau jika sukses, merah jika gagal
-        SLACK_COLOR: ${{ needs.build-test-deploy.result == 'success' && 'good' || 'danger' }}
-        SLACK_FOOTER: "GitHub Actions Workflow"
+    - name: Send Telegram message on success or failure
+      uses: appleboy/telegram-action@master
+      with:
+        # Pastikan Anda mengatur secrets ini di Settings > Environments
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: |
+          *Deployment Status: ${{ needs.build-test-deploy.result == 'success' && '✅ Success' || '❌ Failure' }}*
+          
+          Repository: `${{ github.repository }}`
+          Branch: `${{ github.ref_name }}`
+          Commit: `${{ github.sha }}`
+          Triggered by: `${{ github.actor }}`
+          
+          See details here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        format: markdown
