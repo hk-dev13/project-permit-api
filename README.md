@@ -204,18 +204,6 @@ Documentation
 
 [Project Summary] (PROJECT_SUMMARY.md) → Ringkasan MVP, fitur, roadmap, dan next steps.
 
-
-## Notes
-File output/ dan demo_cookies.json ignored via .gitignore
-
-Untuk production, gunakan Gunicorn + Redis (lihat catatan di API Documentation)
-
-Author
-Husni Kusuma (hk-dev13)
-Fokus pada Web3, AI, dan Quantum Computing.
-
-Made with ❤️ for data transparency
-
 ---
 
 ## Data integrations (extended)
@@ -243,6 +231,16 @@ CEVS Aggregator with modular scoring: base score + bonuses/penalties + clamped [
 Diagnostic endpoint: /global/edgar (country/pollutant trends)
 ENV-based source control
 Testing: pytest, unit + smoke tests ✅
-Documentation: PROJECT_SUMMARY.md and API_DOCUMENTATION.md#   T e s t   G i t H u b   A c t i o n s   t r i g g e r 
- 
- 
+
+---
+
+## Notes
+File output/ dan demo_cookies.json ignored via .gitignore
+
+Untuk production, gunakan Gunicorn + Redis (lihat catatan di API Documentation)
+
+Author
+Husni Kusuma (hk-dev13)
+Fokus pada Web3, AI, dan Quantum Computing.
+
+Made with ❤️ for data transparency
