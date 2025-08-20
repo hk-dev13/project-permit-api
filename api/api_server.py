@@ -5,6 +5,7 @@ Production-ready API with security, caching, and multi-source data integration
 
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
+from flasgger import Swagger, swag_from
 import logging
 from datetime import datetime
 import os
@@ -36,6 +37,63 @@ CORS(app,
      origins=cors_origins,
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
      allow_headers=['Content-Type', 'Authorization', 'X-API-Key'])
+
+# Swagger Configuration
+swagger_template = {
+    "swagger": "2.0",
+    "info": {
+        "title": "Environmental Data Verification API",
+        "description": "Production API for environmental data verification and compliance checking with multi-source data integration",
+        "version": "1.0.0",
+        "termsOfService": "https://j8w3vpxvpb.ap-southeast-2.awsapprunner.com/terms",
+        "contact": {
+            "name": "API Support",
+            "email": "support@environmentalapi.com"
+        }
+    },
+    "host": "j8w3vpxvpb.ap-southeast-2.awsapprunner.com",
+    "basePath": "/",
+    "schemes": ["https"],
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization",
+            "description": "Enter: Bearer your_api_key"
+        }
+    },
+    "tags": [
+        {
+            "name": "Health",
+            "description": "Service health and status endpoints"
+        },
+        {
+            "name": "Global Data",
+            "description": "Global environmental data endpoints"
+        },
+        {
+            "name": "Admin",
+            "description": "Administrative and statistics endpoints"
+        }
+    ]
+}
+
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": 'apispec',
+            "route": '/apispec.json',
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/docs"
+}
+
+swagger = Swagger(app, template=swagger_template, config=swagger_config)
 
 # Production logging configuration
 log_level = getattr(logging, os.getenv('LOG_LEVEL', 'INFO').upper())

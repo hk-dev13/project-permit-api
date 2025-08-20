@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request, current_app, g
+from flasgger import swag_from
 from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional
@@ -69,6 +70,108 @@ def _matches_filters(item: Dict[str, Any], *, state: Optional[str], year: Option
 
 
 @global_bp.route("/global/emissions", methods=["GET"])
+@swag_from({
+    'tags': ['Global Data'],
+    'summary': 'Get Global Emissions Data',
+    'description': 'EPA power plant emissions data with optional filters and pagination. Requires API key authentication.',
+    'security': [{'ApiKeyAuth': []}],
+    'parameters': [
+        {
+            'name': 'state',
+            'in': 'query',
+            'type': 'string',
+            'description': '2-letter state code (e.g., TX, CA)',
+            'example': 'TX'
+        },
+        {
+            'name': 'year',
+            'in': 'query',
+            'type': 'integer',
+            'description': 'Filter by year',
+            'example': 2023
+        },
+        {
+            'name': 'pollutant',
+            'in': 'query',
+            'type': 'string',
+            'description': 'Pollutant type (e.g., CO2, NOX)',
+            'example': 'CO2'
+        },
+        {
+            'name': 'page',
+            'in': 'query',
+            'type': 'integer',
+            'description': 'Page number for pagination',
+            'default': 1
+        },
+        {
+            'name': 'limit',
+            'in': 'query',
+            'type': 'integer',
+            'description': 'Number of results per page (1-100)',
+            'default': 50,
+            'minimum': 1,
+            'maximum': 100
+        }
+    ],
+    'responses': {
+        200: {
+            'description': 'Successful response with emissions data',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'data': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'plant_name': {'type': 'string'},
+                                'state': {'type': 'string'},
+                                'county': {'type': 'string'},
+                                'emissions': {'type': 'number'},
+                                'year': {'type': 'integer'}
+                            }
+                        }
+                    },
+                    'pagination': {
+                        'type': 'object',
+                        'properties': {
+                            'page': {'type': 'integer'},
+                            'limit': {'type': 'integer'},
+                            'total': {'type': 'integer'}
+                        }
+                    },
+                    'metadata': {
+                        'type': 'object',
+                        'properties': {
+                            'source': {'type': 'string'},
+                            'last_updated': {'type': 'string'},
+                            'filters': {'type': 'object'}
+                        }
+                    }
+                }
+            }
+        },
+        401: {
+            'description': 'Authentication required',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string', 'example': 'Authentication required'}
+                }
+            }
+        },
+        403: {
+            'description': 'Invalid API key or insufficient permissions',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {'type': 'string', 'example': 'Invalid API key'}
+                }
+            }
+        }
+    }
+})
 def global_emissions():
 	"""EPA power plant emissions with optional filters and pagination.
 

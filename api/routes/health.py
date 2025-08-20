@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, current_app
+from flasgger import swag_from
 import os
 import sys
 from datetime import datetime
@@ -6,6 +7,58 @@ from datetime import datetime
 health_bp = Blueprint("health_bp", __name__)
 
 @health_bp.route("/health", methods=["GET"])
+@swag_from({
+    'tags': ['Health'],
+    'summary': 'Health Check Endpoint',
+    'description': 'Comprehensive health check for AWS App Runner and monitoring. Returns detailed system status information.',
+    'responses': {
+        200: {
+            'description': 'Service is healthy',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'status': {
+                        'type': 'string',
+                        'example': 'healthy'
+                    },
+                    'timestamp': {
+                        'type': 'string',
+                        'example': '2025-08-20T07:30:00'
+                    },
+                    'version': {
+                        'type': 'string',
+                        'example': '1.0.0'
+                    },
+                    'environment': {
+                        'type': 'string',
+                        'example': 'production'
+                    },
+                    'python_version': {
+                        'type': 'string',
+                        'example': '3.11.13'
+                    },
+                    'services': {
+                        'type': 'object',
+                        'properties': {
+                            'api_server': {
+                                'type': 'string',
+                                'example': 'running'
+                            },
+                            'security': {
+                                'type': 'string',
+                                'example': 'enabled'
+                            },
+                            'rate_limiting': {
+                                'type': 'string',
+                                'example': 'active'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+})
 def health_check():
     """
     Comprehensive health check for AWS App Runner and monitoring.
