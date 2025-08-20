@@ -57,7 +57,7 @@ jobs:
         pip install pytest
 
     - name: Run tests with pytest
-      # PERBAIKAN: Mengambil API Key dari environment secrets
+      # Mengambil API Key dari environment secrets
       # Pastikan Anda sudah mengatur secret 'API_KEYS' di Settings > Environments
       env:
         API_KEY: ${{ secrets.API_KEYS }}
@@ -95,7 +95,8 @@ jobs:
 
     - name: Deploy to App Runner and wait
       run: |
-        SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn | [0]" --output text)
+        # PERBAIKAN: Menambahkan tanda kurung siku `[` yang hilang pada query JMESPath
+        SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn | [0]" --output text)
         
         if [ -n "$SERVICE_ARN" ] && [ "$SERVICE_ARN" != "None" ]; then
           echo "Updating existing App Runner service: $SERVICE_ARN"
@@ -138,6 +139,7 @@ jobs:
       with:
         # Pastikan Anda mengatur secrets ini di Settings > Environments
         to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        # PERBAIKAN: Menyesuaikan nama secret dengan yang ada di gambar Anda
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
           *Deployment Status: ${{ needs.build-test-deploy.result == 'success' && '✅ Success' || '❌ Failure' }}*
