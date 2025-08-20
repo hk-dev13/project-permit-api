@@ -1,3 +1,5 @@
+# Ignore production API keys file
+production_keys.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
