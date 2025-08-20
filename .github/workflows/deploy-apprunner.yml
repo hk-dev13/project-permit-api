@@ -56,7 +56,6 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
 
-    # --- LANGKAH DEBUGGING BARU ---
     - name: Debug API Key
       run: |
         KEY_VALUE="${{ secrets.TEST_API_KEY }}"
@@ -65,9 +64,10 @@ jobs:
         echo "API Key Last 5 Chars: ${KEY_VALUE: -5}"
 
     - name: Run tests with pytest
-      # Menggunakan secret TEST_API_KEY yang berisi satu kunci valid
+      # PERBAIKAN: Menambahkan secret API_KEYS agar server Flask bisa memvalidasi kunci
       env:
-        TEST_API_KEY: ${{ secrets.TEST_API_KEY }}
+        TEST_API_KEY: ${{ secrets.TEST_API_KEY }} # Untuk dikirim oleh skrip tes
+        API_KEYS: ${{ secrets.API_KEYS }}         # Untuk divalidasi oleh server
       run: pytest
 
     # --- Langkah Deployment ---
