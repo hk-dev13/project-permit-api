@@ -5,11 +5,13 @@ on:
     inputs:
       environment:
         description: 'Deployment environment'
-        required: false
-        default: 'production'
+        required: true
+        # PERBAIKAN: Mengubah default agar cocok dengan nama environment Anda
+        default: 'Production'
         type: choice
         options:
-        - production
+        # PERBAIKAN: Mengubah opsi agar cocok
+        - Production
         - staging
   push:
     branches: [ main ]
@@ -21,13 +23,15 @@ on:
 env:
   AWS_REGION: ap-southeast-2
   ECR_REPOSITORY: permit-api
+  APP_RUNNER_SERVICE_NAME: permit-api-service # Nama service dijadikan variabel
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   deploy:
     name: Build and Deploy to App Runner
     runs-on: ubuntu-latest
-    environment: Production
+    # PERBAIKAN: Mengubah default menjadi 'Production' (P besar) agar cocok dengan environment Anda
+    environment: ${{ github.event.inputs.environment || 'Production' }} 
     
     steps:
     - name: Checkout code
@@ -50,46 +54,32 @@ jobs:
         aws ecr create-repository --repository-name $ECR_REPOSITORY --region $AWS_REGION
 
     - name: Build, tag, and push image to Amazon ECR
+      id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
-        # Build Docker image
         docker build -f Dockerfile.apprunner -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker build -f Dockerfile.apprunner -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
         
-        # Push to ECR
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
         
-        # Output image URI
-        echo "image-uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_OUTPUT
 
-    - name: Deploy to App Runner (if service exists)
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+    - name: Deploy to App Runner and wait
       run: |
-        # Check if App Runner service exists
-        SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='permit-api-service'].ServiceArn | [0]" --output text --region $AWS_REGION 2>/dev/null || echo "None")
+        SERVICE_ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE_NAME }}'].ServiceArn | [0]" --output text)
         
-        if [ "$SERVICE_ARN" != "None" ] && [ "$SERVICE_ARN" != "" ] && [ "$SERVICE_ARN" != "null" ]; then
-          echo "Updating existing App Runner service..."
-          aws apprunner start-deployment --service-arn $SERVICE_ARN --region $AWS_REGION
-          echo "Deployment started for service: $SERVICE_ARN"
-        else
-          echo "No existing App Runner service found."
-          echo "Create service manually using image URI: $ECR_REGISTRY/$ECR_REPOSITORY:latest"
-        fi
+        if [ -n "$SERVICE_ARN" ] && [ "$SERVICE_ARN" != "None" ]; then
+          echo "Updating existing App Runner service: $SERVICE_ARN"
+          aws apprunner start-deployment --service-arn $SERVICE_ARN
 
-    - name: Output deployment info
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      run: |
-        echo "🚀 Deployment completed!"
-        echo "📦 Docker Image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-        echo "🔗 Use this image URI in App Runner console:"
-        echo "   $ECR_REGISTRY/$ECR_REPOSITORY:latest"
-        echo ""
-        echo "📋 Next steps:"
-        echo "1. Go to AWS App Runner console"
-        echo "2. Create service with Container Registry source"
-        echo "3. Use image URI: $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          # Menambahkan loop untuk menunggu deployment selesai
+          echo "Waiting for deployment to complete..."
+          timeout 10m aws apprunner wait service-stable --service-arn $SERVICE_ARN
+          echo "Deployment finished successfully!"
+        else
+          echo "Service '${{ env.APP_RUNNER_SERVICE_NAME }}' not found. Please create it manually."
+          echo "Use Image URI: ${{ steps.build-image.outputs.image_uri }}"
+          # exit 1 # Opsional: buat job gagal jika service tidak ditemukan
+        fi
