@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os # <-- DITAMBAHKAN
+import os
 import json
 from api.services.cevs_aggregator import compute_cevs_for_company
 from flask import Flask
@@ -8,19 +8,16 @@ from api.api_server import app as flask_app
 
 
 def test_global_edgar_endpoint_smoke(monkeypatch):
-    # Use Flask test client to avoid needing a running server
+    # PERBAIKAN FINAL: Memuat daftar kunci valid ke dalam konfigurasi aplikasi
+    # sebelum membuat test client.
+    flask_app.config['API_KEYS'] = os.getenv('API_KEYS')
     client = flask_app.test_client()
 
-    # Ambil API key dari environment variable
-    # PERBAIKAN: Menggunakan nama secret yang benar 'TEST_API_KEY'
     api_key = os.getenv('TEST_API_KEY')
-    # PENTING: Ganti 'X-API-KEY' jika nama header Anda berbeda
-    headers = {'X-API-KEY': api_key}
+    headers = {'X-API-Key': api_key}
 
-    resp = client.get("/global/edgar?country=United%20States&pollutant=PM2.5&window=3", headers=headers) # <-- DITAMBAHKAN headers
+    resp = client.get("/global/edgar?country=United%20States&pollutant=PM2.5&window=3", headers=headers)
     
-    # Karena API Key sudah valid, status code tidak akan 401 lagi.
-    # Tes ini sekarang memeriksa apakah statusnya 200 (sukses) atau 400 (jika ada parameter salah)
     assert resp.status_code in (200, 400)
     data = resp.get_json()
     assert isinstance(data, dict)
@@ -29,12 +26,10 @@ def test_global_edgar_endpoint_smoke(monkeypatch):
         assert "series" in data and isinstance(data["series"], list)
         assert "trend" in data and isinstance(data["trend"], dict)
 
-# Bagian di bawah ini untuk testing lokal dan tidak dijalankan oleh pytest
-# jadi tidak perlu diubah.
+# Bagian di bawah ini tidak perlu diubah
 """
 Quick test script untuk API tanpa perlu terminal interaktif
 """
-
 import requests
 
 

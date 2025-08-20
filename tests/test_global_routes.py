@@ -4,7 +4,7 @@ This provides a safety net for core functionality.
 """
 from __future__ import annotations
 
-import os # <-- DITAMBAHKAN
+import os
 import pytest
 from flask import Flask
 from api.api_server import app as flask_app
@@ -16,22 +16,22 @@ class TestGlobalRoutes:
     @pytest.fixture
     def client(self):
         """Flask test client for making API requests."""
+        # PERBAIKAN FINAL: Memuat daftar kunci valid ke dalam konfigurasi aplikasi
+        # sebelum membuat test client.
+        flask_app.config['API_KEYS'] = os.getenv('API_KEYS')
         return flask_app.test_client()
 
     @pytest.fixture
     def auth_headers(self):
         """Fixture to create authentication headers from environment variable."""
-        # PERBAIKAN: Menggunakan nama secret yang benar 'TEST_API_KEY'
         api_key = os.getenv('TEST_API_KEY')
         if not api_key:
-            # PERBAIKAN: Pesan error disesuaikan
             pytest.fail("TEST_API_KEY environment variable not set. Please set it in GitHub Secrets.")
-        # PENTING: Ganti 'X-API-KEY' jika nama header Anda berbeda
-        return {'X-API-KEY': api_key}
+        return {'X-API-Key': api_key}
 
     def test_global_emissions_basic_response(self, client, auth_headers):
         """Test /global/emissions returns 200 and proper structure."""
-        resp = client.get("/global/emissions?limit=5", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/emissions?limit=5", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -41,7 +41,7 @@ class TestGlobalRoutes:
 
     def test_global_emissions_with_filters(self, client, auth_headers):
         """Test /global/emissions with state and year filters."""
-        resp = client.get("/global/emissions?state=TX&year=2023&limit=3", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/emissions?state=TX&year=2023&limit=3", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -50,7 +50,7 @@ class TestGlobalRoutes:
 
     def test_global_emissions_stats(self, client, auth_headers):
         """Test /global/emissions/stats returns aggregated statistics."""
-        resp = client.get("/global/emissions/stats", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/emissions/stats", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -63,7 +63,7 @@ class TestGlobalRoutes:
 
     def test_global_iso_basic_response(self, client, auth_headers):
         """Test /global/iso returns 200 and proper structure."""
-        resp = client.get("/global/iso?limit=10", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/iso?limit=10", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -72,7 +72,7 @@ class TestGlobalRoutes:
 
     def test_global_iso_with_country_filter(self, client, auth_headers):
         """Test /global/iso with country filter."""
-        resp = client.get("/global/iso?country=Germany&limit=5", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/iso?country=Germany&limit=5", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -80,7 +80,7 @@ class TestGlobalRoutes:
 
     def test_global_eea_basic_response(self, client, auth_headers):
         """Test /global/eea returns 200 and proper structure."""
-        resp = client.get("/global/eea?limit=10", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/eea?limit=10", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -89,7 +89,7 @@ class TestGlobalRoutes:
 
     def test_global_eea_with_filters(self, client, auth_headers):
         """Test /global/eea with indicator, country, and year filters."""
-        resp = client.get("/global/eea?country=Sweden&indicator=GHG&year=2023&limit=5", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/eea?country=Sweden&indicator=GHG&year=2023&limit=5", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -100,7 +100,7 @@ class TestGlobalRoutes:
 
     def test_global_cevs_basic_company(self, client, auth_headers):
         """Test /global/cevs/{company} returns proper CEVS score structure."""
-        resp = client.get("/global/cevs/Green%20Energy%20Corp", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/cevs/Green%20Energy%20Corp", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -116,7 +116,7 @@ class TestGlobalRoutes:
 
     def test_global_cevs_with_country(self, client, auth_headers):
         """Test /global/cevs/{company} with country parameter for enhanced scoring."""
-        resp = client.get("/global/cevs/Swedish%20Wind%20Power?country=Sweden", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/cevs/Swedish%20Wind%20Power?country=Sweden", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -128,7 +128,7 @@ class TestGlobalRoutes:
 
     def test_global_edgar_basic_response(self, client, auth_headers):
         """Test /global/edgar returns proper structure (may have empty data if file missing)."""
-        resp = client.get("/global/edgar?country=United%20States&pollutant=PM2.5", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/edgar?country=United%20States&pollutant=PM2.5", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
@@ -141,8 +141,7 @@ class TestGlobalRoutes:
 
     def test_global_edgar_missing_country(self, client, auth_headers):
         """Test /global/edgar returns 400 when country parameter is missing."""
-        resp = client.get("/global/edgar?pollutant=NOx", headers=auth_headers) # <-- DITAMBAHKAN headers
-        # API Key valid, jadi errornya bukan 401, melainkan 400 karena parameter tidak lengkap
+        resp = client.get("/global/edgar?pollutant=NOx", headers=auth_headers)
         assert resp.status_code == 400
         data = resp.get_json()
         assert data["status"] == "error"
@@ -150,7 +149,7 @@ class TestGlobalRoutes:
 
     def test_global_edgar_with_window_parameter(self, client, auth_headers):
         """Test /global/edgar with custom trend window parameter."""
-        resp = client.get("/global/edgar?country=Germany&pollutant=NOx&window=5", headers=auth_headers) # <-- DITAMBAHKAN headers
+        resp = client.get("/global/edgar?country=Germany&pollutant=NOx&window=5", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["status"] == "success"
